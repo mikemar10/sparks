@@ -2,7 +2,7 @@ const std = @import("std");
 const rl = @import("raylib");
 
 // TODO: better seed
-var default_prng = std.Random.DefaultPrng.init(69420);
+var default_prng = std.Random.DefaultPrng.init(123456);
 const prng = default_prng.random();
 
 const State = enum {
@@ -23,8 +23,7 @@ const DB = struct {
     pub fn reset() !Self {
         return Self{
             .state = State.start,
-            .delay_duration = prng.intRangeAtMost(u64, 500_000_000, 2_000_000_000),
-            // TODO: better represent milliseconds with these constants below
+            .delay_duration = prng.intRangeAtMost(u64, 500 * std.time.ns_per_ms, 2000 * std.time.ns_per_ms),
             .reflex_duration = 0,
             .timer_start = try std.time.Instant.now(),
         };
