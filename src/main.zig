@@ -49,7 +49,7 @@ const click_msg = "CLICK NOW!";
 const results_msg = "Reaction time: {s}ms";
 
 pub fn main() !void {
-    const db = try DB.reset();
+    var db = try DB.reset();
     const screenWidth = 1280;
     const screenHeight = 800;
     rl.initWindow(screenWidth, screenHeight, "reflex test");
@@ -65,11 +65,37 @@ pub fn main() !void {
             .start => {
                 rl.clearBackground(start_color);
                 rl.drawText(start_msg, 0, 0, 32, text_color);
+                if (rl.isMouseButtonPressed(rl.MouseButton.left)) {
+                    db = try DB.reset();
+                    db.state = State.wait;
+                }
             },
-            .wait => {},
-            .foul => {},
-            .click => {},
-            .results => {},
+            .wait => {
+                rl.clearBackground(wait_color);
+                rl.drawText(wait_msg, 0, 0, 32, text_color);
+                const now = try std.time.Instant.now();
+                const elapsed = now.since(db.timer_start);
+
+                if (rl.isMouseButtonPressed(rl.MouseButton.left)) {
+                    db.state = State.foul;
+                }
+
+                if (elapsed >= db.delay_duration) {
+                    db.state = State.click;
+                }
+            },
+            .foul => {
+                rl.clearBackground(foul_color);
+                rl.drawText(foul_msg, 0, 0, 32, text_color);
+            },
+            .click => {
+                rl.clearBackground(click_color);
+                rl.drawText(click_msg, 0, 0, 32, text_color);
+            },
+            .results => {
+                rl.clearBackground(results_color);
+                rl.drawText(results_msg, 0, 0, 32, text_color);
+            },
         }
     }
     // Prints to stderr (it's a shortcut based on `std.io.getStdErr()`)
