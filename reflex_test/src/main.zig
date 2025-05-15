@@ -1,7 +1,3 @@
-//! By convention, main.zig is where your main function lives in the case that
-//! you are building an executable. If you are making a library, the convention
-//! is to delete this file and start with root.zig instead.
-
 const std = @import("std");
 const rl = @import("raylib");
 
@@ -48,14 +44,11 @@ const foul_msg = "You clicked too soon!";
 const click_msg = "CLICK NOW!";
 const results_msg = "Reaction time: {d}ms";
 
-pub fn main() !void {
-    // var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-    // defer arena.deinit();
-    // const allocator = arena.allocator();
+const screenWidth = 1280;
+const screenHeight = 800;
 
+pub fn main() !void {
     var db = try DB.reset();
-    const screenWidth = 1280;
-    const screenHeight = 800;
     rl.initWindow(screenWidth, screenHeight, "reflex test");
     defer rl.closeWindow();
 
