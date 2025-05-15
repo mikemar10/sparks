@@ -24,7 +24,8 @@ const DB = struct {
         self = Self{
             .state = State.start,
             .delay_duration = 0,
-            .reflex_duration = std.crypto.Random.intRangeAtMost(u64, 500, 2000),
+            // TODO: better represent milliseconds with these constants below
+            .reflex_duration = std.crypto.Random.intRangeAtMost(u64, 500_000_000, 2_000_000_000),
             .timer_start = std.time.Instant.now(),
         };
     }
@@ -36,7 +37,15 @@ const foul_color = rl.Color.red;
 const click_color = rl.Color.green;
 const results_color = rl.Color.blue;
 
+const start_msg = "Click to start";
+const wait_msg = "Wait...";
+const foul_msg = "You clicked too soon!";
+const click_msg = "CLICK NOW!";
+const results_msg = "Reaction time: {s}ms";
+
 pub fn main() !void {
+    var db = DB{};
+    db.reset();
     const screenWidth = 1280;
     const screenHeight = 800;
     rl.initWindow(screenWidth, screenHeight, "reflex test");
@@ -47,6 +56,14 @@ pub fn main() !void {
     while (!rl.windowShouldClose()) {
         rl.beginDrawing();
         defer rl.endDrawing();
+
+        switch (db.state) {
+            .start => {},
+            .wait => {},
+            .foul => {},
+            .click => {},
+            .results => {},
+        }
 
         rl.clearBackground(rl.Color.black);
         rl.drawText("Congrats! You finally got around to doing this", 190, 200, 20, rl.Color.light_gray);
