@@ -87,14 +87,29 @@ pub fn main() !void {
             .foul => {
                 rl.clearBackground(foul_color);
                 rl.drawText(foul_msg, 0, 0, 32, text_color);
+
+                if (rl.isMouseButtonPressed(rl.MouseButton.left)) {
+                    db.state = State.start;
+                }
             },
             .click => {
                 rl.clearBackground(click_color);
                 rl.drawText(click_msg, 0, 0, 32, text_color);
+                const now = try std.time.Instant.now();
+                const elapsed = now.since(db.timer_start);
+
+                if (rl.isMouseButtonPressed(rl.MouseButton.left)) {
+                    db.reflex_duration = elapsed;
+                    db.state = State.results;
+                }
             },
             .results => {
                 rl.clearBackground(results_color);
                 rl.drawText(results_msg, 0, 0, 32, text_color);
+
+                if (rl.isMouseButtonPressed(rl.MouseButton.left)) {
+                    db.state = State.start;
+                }
             },
         }
     }
