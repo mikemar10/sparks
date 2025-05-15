@@ -16,59 +16,66 @@ pub fn main() !void {
     defer rl.closeWindow();
 
     while (!rl.windowShouldClose()) {
-        rl.beginDrawing();
-        defer rl.endDrawing();
+        update(&db);
+        try render(&db);
+    }
+}
 
-        // render the background color
-        const bg_color = switch (db.state) {
-            .start => cfg.start_color,
-            .wait => cfg.wait_color,
-            .foul => cfg.foul_color,
-            .click => cfg.click_color,
-            .results => cfg.results_color,
-        };
-        rl.clearBackground(bg_color);
+fn render(db: *DB) !void {
+    rl.beginDrawing();
+    defer rl.endDrawing();
 
-        // render the message and FPS
-        const msg = switch (db.state) {
-            .start => cfg.start_msg,
-            .wait => cfg.wait_msg,
-            .foul => cfg.foul_msg,
-            .click => cfg.click_msg,
-            .results => try std.fmt.bufPrintZ(db.msg_buffer, cfg.results_msg, .{db.reflex_duration / std.time.ns_per_ms}),
-        };
-        rl.drawText(msg, 0, 0, 32, cfg.text_color);
-        rl.drawFPS(0, 32);
+    // render the background color
+    const bg_color = switch (db.state) {
+        .start => cfg.start_color,
+        .wait => cfg.wait_color,
+        .foul => cfg.foul_color,
+        .click => cfg.click_color,
+        .results => cfg.results_color,
+    };
+    rl.clearBackground(bg_color);
 
-        // handle state transitions on mouse click
-        if (rl.isMouseButtonPressed(rl.MouseButton.left)) {
-            switch (db.state) {
-                .start => {
-                    db.reset();
-                    db.state = .wait;
-                },
-                .wait => {
-                    db.state = .foul;
-                },
-                .foul => {
-                    db.state = .start;
-                },
-                .click => {
-                    db.reflex_duration = db.timer.read();
-                    db.state = .results;
-                },
-                .results => {
-                    db.state = .start;
-                },
-            }
+    // render the message and FPS
+    const msg = switch (db.state) {
+        .start => cfg.start_msg,
+        .wait => cfg.wait_msg,
+        .foul => cfg.foul_msg,
+        .click => cfg.click_msg,
+        .results => try std.fmt.bufPrintZ(db.msg_buffer, cfg.results_msg, .{db.reflex_duration / std.time.ns_per_ms}),
+    };
+    rl.drawText(msg, 0, 0, 32, cfg.text_color);
+    rl.drawFPS(0, 32);
+}
+
+fn update(db: *DB) void {
+    // handle state transitions on mouse click
+    if (rl.isMouseButtonPressed(rl.MouseButton.left)) {
+        switch (db.state) {
+            .start => {
+                db.reset();
+                db.state = .wait;
+            },
+            .wait => {
+                db.state = .foul;
+            },
+            .foul => {
+                db.state = .start;
+            },
+            .click => {
+                db.reflex_duration = db.timer.read();
+                db.state = .results;
+            },
+            .results => {
+                db.state = .start;
+            },
         }
+    }
 
-        // check wait timer if in wait state
-        if (db.state == .wait) {
-            if (db.timer.read() >= db.wait_duration) {
-                db.timer.reset();
-                db.state = .click;
-            }
+    // check wait timer if in wait state
+    if (db.state == .wait) {
+        if (db.timer.read() >= db.wait_duration) {
+            db.timer.reset();
+            db.state = .click;
         }
     }
 }
