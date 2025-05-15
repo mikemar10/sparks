@@ -46,9 +46,13 @@ const start_msg = "Click to start";
 const wait_msg = "Wait...";
 const foul_msg = "You clicked too soon!";
 const click_msg = "CLICK NOW!";
-const results_msg = "Reaction time: {s}ms";
+const results_msg = "Reaction time: {d}ms";
 
 pub fn main() !void {
+    // var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    // defer arena.deinit();
+    // const allocator = arena.allocator();
+
     var db = try DB.reset();
     const screenWidth = 1280;
     const screenHeight = 800;
@@ -81,6 +85,7 @@ pub fn main() !void {
                 }
 
                 if (elapsed >= db.delay_duration) {
+                    db.timer_start = now;
                     db.state = State.click;
                 }
             },
@@ -105,7 +110,9 @@ pub fn main() !void {
             },
             .results => {
                 rl.clearBackground(results_color);
-                rl.drawText(results_msg, 0, 0, 32, text_color);
+                var buffer: [256]u8 = undefined;
+                const results_msg_formatted = try std.fmt.bufPrintZ(&buffer, results_msg, .{db.reflex_duration / std.time.ns_per_ms});
+                rl.drawText(results_msg_formatted, 0, 0, 32, text_color);
 
                 if (rl.isMouseButtonPressed(rl.MouseButton.left)) {
                     db.state = State.start;
