@@ -5,6 +5,10 @@
 const std = @import("std");
 const rl = @import("raylib");
 
+// TODO: better seed
+var default_prng = std.Random.DefaultPrng.init(69420);
+const prng = default_prng.random();
+
 const State = enum {
     start,
     wait,
@@ -20,17 +24,18 @@ const DB = struct {
     timer_start: std.time.Instant,
 
     const Self = @This();
-    pub fn reset(self: Self) void {
-        self = Self{
+    pub fn reset() !Self {
+        return Self{
             .state = State.start,
-            .delay_duration = 0,
+            .delay_duration = prng.intRangeAtMost(u64, 500_000_000, 2_000_000_000),
             // TODO: better represent milliseconds with these constants below
-            .reflex_duration = std.crypto.Random.intRangeAtMost(u64, 500_000_000, 2_000_000_000),
-            .timer_start = std.time.Instant.now(),
+            .reflex_duration = 0,
+            .timer_start = try std.time.Instant.now(),
         };
     }
 };
 
+const text_color = rl.Color.light_gray;
 const start_color = rl.Color.blue;
 const wait_color = rl.Color.blue;
 const foul_color = rl.Color.red;
@@ -44,8 +49,7 @@ const click_msg = "CLICK NOW!";
 const results_msg = "Reaction time: {s}ms";
 
 pub fn main() !void {
-    var db = DB{};
-    db.reset();
+    const db = try DB.reset();
     const screenWidth = 1280;
     const screenHeight = 800;
     rl.initWindow(screenWidth, screenHeight, "reflex test");
@@ -58,15 +62,15 @@ pub fn main() !void {
         defer rl.endDrawing();
 
         switch (db.state) {
-            .start => {},
+            .start => {
+                rl.clearBackground(start_color);
+                rl.drawText(start_msg, 0, 0, 32, text_color);
+            },
             .wait => {},
             .foul => {},
             .click => {},
             .results => {},
         }
-
-        rl.clearBackground(rl.Color.black);
-        rl.drawText("Congrats! You finally got around to doing this", 190, 200, 20, rl.Color.light_gray);
     }
     // Prints to stderr (it's a shortcut based on `std.io.getStdErr()`)
     std.debug.print("All your {s} are belong to us.\n", .{"codebase"});
