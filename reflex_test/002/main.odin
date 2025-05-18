@@ -28,8 +28,8 @@ main :: proc() {
 		}
 	}
 
-	db := Db{}
-	reset(&db)
+	db := Db {}
+	set_state(&db, start_state(ResultsState {}))
 
 	rl.InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
 	for !rl.WindowShouldClose() {
@@ -43,56 +43,33 @@ main :: proc() {
 render :: proc(db: ^Db) {
 	rl.BeginDrawing()
 	rl.DrawFPS(0, 32)
-	switch db.state {
-	case .Start:
-		rl.ClearBackground(START_COLOR)
-		rl.DrawText(START_MSG, 0, 0, 32, TEXT_COLOR)
-	case .Wait:
-		rl.ClearBackground(WAIT_COLOR)
-		rl.DrawText(WAIT_MSG, 0, 0, 32, TEXT_COLOR)
-	case .Foul:
-		rl.ClearBackground(FOUL_COLOR)
-		rl.DrawText(FOUL_MSG, 0, 0, 32, TEXT_COLOR)
-	case .Click:
-		rl.ClearBackground(CLICK_COLOR)
-		rl.DrawText(CLICK_MSG, 0, 0, 32, TEXT_COLOR)
-	case .Results:
-		rl.ClearBackground(RESULTS_COLOR)
-		rl.DrawText(db.results_msg, 0, 0, 32, TEXT_COLOR)
-	}
+	render_state(db.state)
 	rl.EndDrawing()
 }
 
 update :: proc(db: ^Db) {
-	switch db.state {
-	case .Start:
+	switch s in db.state.variant {
+	case StartState:
 		if rl.IsMouseButtonPressed(.LEFT) {
-			reset(db)
-			time.stopwatch_start(&db.stopwatch)
-			db.state = .Wait
+			set_state(db, wait_state(s))
 		}
-	case .Wait:
+	case WaitState:
 		if rl.IsMouseButtonPressed(.LEFT) {
-			db.state = .Foul
+			set_state(db, foul_state(s))
+		} else if time.stopwatch_duration(s.stopwatch) >= s.duration {
+			set_state(db, click_state(s))
 		}
-		if time.stopwatch_duration(db.stopwatch) >= db.wait_duration {
-			time.stopwatch_reset(&db.stopwatch)
-			time.stopwatch_start(&db.stopwatch)
-			db.state = .Click
-		}
-	case .Foul:
+	case FoulState:
 		if rl.IsMouseButtonPressed(.LEFT) {
-			db.state = .Start
+			set_state(db, start_state(s))
 		}
-	case .Click:
+	case ClickState:
 		if rl.IsMouseButtonPressed(.LEFT) {
-			db.reflex_duration = time.stopwatch_duration(db.stopwatch)
-			db.results_msg = fmt.ctprintf(RESULTS_MSG, db.reflex_duration)
-			db.state = .Results
+			set_state(db, results_state(s, time.stopwatch_duration(s.stopwatch)))
 		}
-	case .Results:
+	case ResultsState:
 		if rl.IsMouseButtonPressed(.LEFT) {
-			db.state = .Start
+			set_state(db, start_state(s))
 		}
 	}
 }
